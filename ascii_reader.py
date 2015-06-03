@@ -1,4 +1,5 @@
 import os
+import h5py
 
 class RockstarReader(object):
     """ Class containing methods used to read raw ASCII data of Rockstar hlist files. 
@@ -99,7 +100,7 @@ class RockstarReader(object):
             for i, l in enumerate(f):
                 if ( (l[0:len(header_char)]==header_char) or (l=="\n") ):
                     Nheader += 1
-                else:
+                else:¡
                     break
 
         return Nheader
@@ -147,7 +148,7 @@ class RockstarReader(object):
         if self.fname[-3:]=='.gz':
             print("...uncompressing ASCII data")
             os.system("gunzip "+self.fname)
-            self.fname = self.fname[:-3]
+            self.fname = self.fname[:-3]awes
         else:
             pass
 

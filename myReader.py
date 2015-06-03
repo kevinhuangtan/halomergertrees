@@ -1,4 +1,6 @@
 import os
+import numpy as np
+import h5py
 
 class RockstarReader(object):
 
@@ -6,10 +8,11 @@ class RockstarReader(object):
         """
         RockstarReader(filename)
         """
+        
 
         if not os.path.isfile(filename):
             raise IOError("Input filename %s is not a file" % filename)
-                
+        self.f = h5py.File('sample1.hdf5', 'w')  
         self.fname = filename
         self._uncompress_ascii()
 
@@ -32,10 +35,24 @@ class RockstarReader(object):
         """
 
         with open(self.fname) as f:
-            line = f.readline()
-            s = line.split()
-            print s
-        return 
+            header = []
+            # for line in f:
+            for i, line in enumerate(f):
+                if(i==0):
+                    header = line.split()
+                    print header
+                if(line[0]!='#'):
+                    break
+        return header
+
+    def read_tree(self):
+        f = self.f
+        hd_header = f.create_group('header')
+        header = self.get_header()
+        print header
+        hd_header['ascii_header'] = np.asarray(header)
+        # categories = hd_header.create_dataset('categories') 
+        # categories = get_header()
 
     def _uncompress_ascii(self):
         """ If the input fname has file extension `.gz`, 
