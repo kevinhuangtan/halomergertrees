@@ -50,7 +50,7 @@ class RockstarReader(object):
         hd_header = f.create_group('header')
         header = self.get_header()
         print header
-        hd_header['ascii_header'] = np.asarray(header)
+        hd_header['categories'] = np.asarray(header)
         # categories = hd_header.create_dataset('categories') 
         # categories = get_header()
 
