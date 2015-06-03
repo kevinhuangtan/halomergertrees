@@ -1,3 +1,5 @@
+import os
+
 class RockstarReader(object):
     """ Class containing methods used to read raw ASCII data of Rockstar hlist files. 
 
@@ -17,16 +19,7 @@ class RockstarReader(object):
         halo_finder : string 
             Nickname of the halo-finder, e.g. `rockstar`. 
 
-        cuts_funcobj : function object, optional
-            Function used to apply cuts to the rows of the ASCII data. 
-            `cuts_funcobj` should accept a structured array as input, 
-            and return a boolean array of the same length. 
-            If None, default cut is set by `default_halocat_cut`. 
-            If set to the string ``nocut``, all rows will be kept. 
-            The `cuts_funcobj` must be a callable function defined 
-            within the namespace of the `RockstarReader` instance, and 
-            it must be a stand-alone function, not a bound method of 
-            some other class.  
+        take out cuts_funcobj
         """
 
         if not os.path.isfile(input_fname):
@@ -37,25 +30,13 @@ class RockstarReader(object):
         self._uncompress_ascii()
         self.simname = simname
         self.halo_finder = halo_finder
-        self.halocat_obj = get_halocat_obj(simname, halo_finder)
+        # self.halocat_obj = get_halocat_obj(simname, halo_finder)
 
-        if 'cuts_funcobj' in kwargs.keys():
-            if kwargs['cuts_funcobj'] == 'nocut':
-                g = lambda x : np.ones(len(x), dtype=bool)
-                self.cuts_funcobj = g
-                self._cuts_description = 'nocut'
-            else:
-                if callable(kwargs['cuts_funcobj']):
-                    self.cuts_funcobj = kwargs['cuts_funcobj']
-                    self._cuts_description = 'User-supplied cuts_funcobj'
-                else:
-                    raise TypeError("The input cuts_funcobj must be a callable function")
-                    
-        else:
-            self.cuts_funcobj = self.default_halocat_cut
-            self._cuts_description = 'Default cut set by default_halocat_cut'
 
-[docs]    def default_halocat_cut(self, x):
+        self.cuts_funcobj = self.default_halocat_cut
+        self._cuts_description = 'Default cut set by default_halocat_cut'
+
+    def default_halocat_cut(self, x):
         """ Function used to provide a simple cut on a raw halo catalog, 
         such that only rows with :math:`M_{\\rm peak} > 300m_{\\rm p}` 
         pass the cut. 
@@ -72,10 +53,10 @@ class RockstarReader(object):
         """
 
         return x['mpeak'] > ( 
-            self.halocat_obj.simulation.particle_mass*
+            # self.halocat_obj.simulation.particle_mass*
             sim_defaults.Num_ptcl_requirement)
 
-[docs]    def file_len(self):
+    def file_len(self):
         """ Compute the number of all rows in the raw halo catalog. 
 
         Parameters 
@@ -93,7 +74,7 @@ class RockstarReader(object):
         Nrows = i + 1
         return Nrows
 
-[docs]    def header_len(self,header_char='#'):
+    def header_len(self,header_char='#'):
         """ Compute the number of header rows in the raw halo catalog. 
 
         Parameters 
@@ -123,7 +104,7 @@ class RockstarReader(object):
 
         return Nheader
 
-[docs]    def get_header(self, Nrows_header_total=None):
+    def get_header(self, Nrows_header_total=None):
         """ Return the header as a list of strings, 
         one entry per header row. 
 
@@ -151,6 +132,7 @@ class RockstarReader(object):
             for i in range(Nrows_header_total):
                 line = f.readline().strip()
                 output.append(line)
+                print 'row'
 
         return output
 
@@ -181,7 +163,7 @@ class RockstarReader(object):
             pass
 
 
-[docs]    def read_halocat(self, **kwargs):
+    def read_halocat(self, **kwargs):
         """ Reads the raw halo catalog in chunks and returns a structured array
         after applying cuts.
 
@@ -212,7 +194,7 @@ class RockstarReader(object):
         else:
             Nchunks = 1000
 
-        dt = self.halocat_obj.halocat_column_info
+        # dt = self.halocat_obj.halocat_column_info remove halocat_obj
 
         file_length = self.file_len()
         header_length = self.header_len()
