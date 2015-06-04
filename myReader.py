@@ -17,42 +17,22 @@ class RockstarReader(object):
         self._uncompress_ascii()
 
     def get_header(self):
-        """ Return the header as a list of strings, 
-        one entry per header row. 
-
-        Parameters 
-        ----------
-        fname : string 
-
-        Nrows_header_total :  int, optional
-            If the total number of header rows is not known in advance, 
-            method will call `header_len` to determine Nrows_header_total. 
-
-        Notes 
-        -----
-        Empty lines will be included in the returned header. 
-
-        """
-
-        with open(self.fname) as f:
-            header = []
-            # for line in f:
-            for i, line in enumerate(f):
+        header = {}
+        with open(self.fname) as ascii_file:
+            header['ascii_header'] = []
+            for i, line in enumerate(ascii_file):
+                header['ascii_header'].append(line)
+                #create categories from first line
                 if(i==0):
-                    header = line.split()
-                    print header
+                    header['categories'] = line.split()
                 if(line[0]!='#'):
                     break
-        return header
 
-    def read_tree(self):
-        f = self.f
-        hd_header = f.create_group('header')
-        header = self.get_header()
-        print header
-        hd_header['categories'] = np.asarray(header)
-        # categories = hd_header.create_dataset('categories') 
-        # categories = get_header()
+        hd_header = self.f.create_group('header')
+        hd_header['categories'] = np.asarray(header['categories'])
+        hd_header['ascii_header'] = header['ascii_header']
+        print header['ascii_header']
+
 
     def _uncompress_ascii(self):
         """ If the input fname has file extension `.gz`, 
