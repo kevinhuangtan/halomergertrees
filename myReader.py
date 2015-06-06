@@ -2,7 +2,8 @@ import os
 import numpy as np
 import h5py
 
-a.f.close()
+if(a.f):
+    a.f.close()
 
 class RockstarReader(object):
 
@@ -18,7 +19,11 @@ class RockstarReader(object):
         self.fname = filename
         self._uncompress_ascii()
         self.get_header()
-        self.forest = self.set_tree()
+        self.num_trees = 0
+        self.tree_space = self.create_tree_space()
+        self.forest = self.read_in_trees()
+    
+        # self.forest = self.set_tree()
 
     def get_header(self):
         header = {}
@@ -36,31 +41,75 @@ class RockstarReader(object):
         hd_header['categories'] = np.asarray(header['categories'])
         hd_header['ascii_header'] = header['ascii_header']
 
-    def set_tree(self):
+    def create_tree_space(self):
         f = self.f
         with open(self.fname) as ascii_file:
-            #skip header lines
-            for x in xrange(f['header'].attrs['length']):
-                next(ascii_file)
 
-            forest = []
-            tree = []
+             #skip header lines
+            for _ in xrange(f['header'].attrs['length']):
+                next(ascii_file)    
+
+            #number of trees in file
+            self.num_trees = int(next(ascii_file))
+
+            #inialize array of trees
+            tree_ids = [0] * (self.num_trees)
+            tree_sizes = {}
+            tree_sizes_array = [0] * self.num_trees
+
             #iterate through lines in file
-            tree_root_ID = ""
+            tree_index = 0
+            tree_size = 0
             for line in ascii_file:
                 if(line[0]=='#'): #new tree
-                    forest.append(tree)
-                    tree = []
-                    tree_root_ID = line[6:]
-                    curr_group = f.create_group("tree"+tree_root_ID)
-                    curr_group.attrs['tree_root_ID'] = tree_root_ID
-                tree.append(line)
-                print line
-            return forest
-            # f['forest'] = forest
+                    if(tree_size!=0): #if not first line (first tree), add tree size to last tree
+                        tree_sizes[tree_ids[tree_index]] = tree_size
+                        tree_sizes_array[tree_index] = tree_size
+                        tree_size = 0
+                        tree_index = tree_index + 1
+                    tree_ids[tree_index] = int(line[6:]) #next tree id
+                   
+                else: #add to tree size if not a new tree
+                    tree_size = tree_size + 1
 
+            #last tree before EOF
+            tree_sizes[tree_ids[tree_index]] = tree_size
+            tree_sizes_array[tree_index] = tree_size
+        return tree_sizes_array
+
+
+    def read_in_trees(self):
+        f = self.f
+        tree_space = self.tree_space
+        forest = {}
+        with open(self.fname) as ascii_file:
+
+             #skip header lines
+            for _ in xrange(f['header'].attrs['length']):
+                next(ascii_file)    
+            #skip this line
+            next(ascii_file)
+            tree_index = 0
+            category_length = len(f['header/categories'])
+            tree_element_index = 0
+            z = np.zeros((self.tree_space[0],3))
+            tree_element_index = 0
+            tree_number = 0
+            for line in ascii_file:
+                if(line[0]=='#'): #new tree
+                    if(tree_index!=0):
+                        print z
+                        forest[tree_index] = z
+                        #initialize numpy array with proper dimensions
+                        z = np.zeros((self.tree_space[tree_index],category_length))
+                        tree_element_index = 0
+                    tree_index = tree_index + 1
+                else:
+                    z[tree_element_index] = line.split()
+                    tree_element_index = tree_element_index + 1
+        return forest
             
-                
+            
     def _uncompress_ascii(self):
         if self.fname[-3:]=='.gz':
             print("...uncompressing ASCII data")
@@ -70,4 +119,5 @@ class RockstarReader(object):
             pass
         return
 
-a = RockstarReader('sample.txt')
+a = RockstarReader('sample_with_categories.txt')
+print a.forest
