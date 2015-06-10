@@ -3,9 +3,6 @@ import numpy as np
 import h5py
 
 
-if(a.f):
-  a.f.close()
-
 
 class RockstarReader(object):
 
@@ -24,7 +21,7 @@ class RockstarReader(object):
         self.num_trees = 0
         self.tree_ids = []
         self.tree_space = self.create_tree_space()
-        self.forest = self.read_in_trees()
+        self.read_in_trees()
 
     def get_header(self):
         header = {}
@@ -52,6 +49,7 @@ class RockstarReader(object):
 
             #number of trees in file
             self.num_trees = int(next(ascii_file))
+            f['header/numtrees'] = int(next(ascii_file))
 
             #inialize array of trees
             tree_ids = [0] * (self.num_trees)
@@ -84,7 +82,7 @@ class RockstarReader(object):
         f = self.f
         tree_space = self.tree_space
         tree_ids = self.tree_ids
-        forest = {}
+        # forest = {} #for debugging, python dictionary that acts as hdf5
         with open(self.fname) as ascii_file:
              #skip header lines
             for _ in xrange(f['header'].attrs['length']):
@@ -103,29 +101,22 @@ class RockstarReader(object):
             for line in ascii_file:
                 if(line[0]=='#'): #new tree
                     if(not first_line): #not first tree
-                        forest[str(tree_ids[tree_index - 1])] = z #store last finished tree
+                        # forest[str(tree_ids[tree_index - 1])] = z #store last finished tree
                         f[str(tree_ids[tree_index - 1])] = z
                         #initialize numpy array with proper dimensions
-                        # print z
-                        # print 'tree index', tree_index
-                        # print 'tree space', self.tree_space[tree_index]
                         z = np.zeros((self.tree_space[tree_index],category_length))
                         tree_element_index = 0
                         tree_index += 1
                     else:
-                        # print 'tree index', tree_index
-                        # print 'tree space', self.tree_space[tree_index]
-                        # forest[str(tree_ids[tree_index])] = z #store last finished tree
                         tree_index += 1
                     first_line = False
                 else: #read in next tree element
                     z[tree_element_index] = line.split()
                     tree_element_index += 1
-            # print z
-            forest[str(tree_ids[tree_index - 1])] = z
+            # forest[str(tree_ids[tree_index - 1])] = z #get last tree
             f[str(tree_ids[tree_index - 1])] = z
 
-        return forest
+        # return forest
             
             
     def _uncompress_ascii(self):
@@ -137,5 +128,5 @@ class RockstarReader(object):
             pass
         return
 
-a = RockstarReader('sample_with_categories.txt')
+a = RockstarReader('tree_0_2_2.dat')
 # print a.forest
