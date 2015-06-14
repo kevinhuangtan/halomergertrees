@@ -115,8 +115,7 @@ class RockstarReader(object):
             # forest[str(tree_ids[tree_index - 1])] = z #get last tree
             f[str(tree_ids[tree_index - 1])] = z
         return
-            
-            
+
     def _uncompress_ascii(self):
         if self.fname[-3:]=='.gz':
             print("...uncompressing ASCII data")
