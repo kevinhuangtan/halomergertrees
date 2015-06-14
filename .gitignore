@@ -1,2 +1,4 @@
 *.pyc
 ignore/
+*.txt
+*.hdf5
