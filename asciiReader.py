@@ -4,6 +4,66 @@ import h5py
 DEPTH_FIRST_ID = 28
 LAST_MAINLEAF_DEPTHFIRST_ID = 34
 
+dt = np.dtype([
+    ('scale', 'f4'), 
+    ('haloid', 'i8'), 
+    ('scale_desc', 'f4'), 
+    ('haloid_desc', 'i8'), 
+    ('num_prog', 'i4'), 
+    ('pid', 'i8'), 
+    ('upid', 'i8'), 
+    ('pid_desc', 'i8'), 
+    ('phantom', 'i4'), 
+    ('mvir_sam', 'f4'), 
+    ('mvir', 'f4'), 
+    ('rvir', 'f4'), 
+    ('rs', 'f4'), 
+    ('vrms', 'f4'), 
+    ('mmp', 'i4'), 
+    ('scale_lastmm', 'f4'), 
+    ('vmax', 'f4'), 
+    ('x', 'f4'), 
+    ('y', 'f4'), 
+    ('z', 'f4'), 
+    ('vx', 'f4'), 
+    ('vy', 'f4'), 
+    ('vz', 'f4'), 
+    ('jx', 'f4'), 
+    ('jy', 'f4'), 
+    ('jz', 'f4'), 
+    ('spin', 'f4'), 
+    ('haloid_breadth_first', 'i8'), 
+    ('haloid_depth_first', 'i8'), 
+    ('haloid_tree_root', 'i8'), 
+    ('haloid_orig', 'i8'), 
+    ('snap_num', 'i4'), 
+    ('haloid_next_coprog_depthfirst', 'i8'), 
+    ('haloid_last_prog_depthfirst', 'i8'), 
+    ('haloid_last_mainleaf_depthfirst', 'i8'), 
+    ('rs_klypin', 'f4'), 
+    ('mvir_all', 'f4'), 
+    ('m200b', 'f4'), 
+    ('m200c', 'f4'), 
+    ('m500c', 'f4'), 
+    ('m2500c', 'f4'), 
+    ('xoff', 'f4'), 
+    ('voff', 'f4'), 
+    ('spin_bullock', 'f4'), 
+    ('b_to_a', 'f4'), 
+    ('c_to_a', 'f4'), 
+    ('axisA_x', 'f4'), 
+    ('axisA_y', 'f4'), 
+    ('axisA_z', 'f4'), 
+    ('b_to_a_500c', 'f4'), 
+    ('c_to_a_500c', 'f4'), 
+    ('axisA_x_500c', 'f4'), 
+    ('axisA_y_500c', 'f4'), 
+    ('axisA_z_500c', 'f4'), 
+    ('t_by_u', 'f4'), 
+    ('mass_pe_behroozi', 'f4'), 
+    ('mass_pe_diemer', 'f4')
+    ])
+
 class RockstarReader(object):
 
     def __init__(self, filename, hdf5_name):
@@ -63,9 +123,9 @@ class RockstarReader(object):
                 for line in ascii_file:
                     if(line[0]=='#'): #new tree
                         if(not first_line): #not first tree
-                            arr = np.array(current_tree).astype('f8')
-                            f[tree_id] = arr[arr[:, DEPTH_FIRST_ID].argsort()] #sort by depthid
-                            f[tree_id].attrs['last_mainleaf'] = int(f[tree_id][0][LAST_MAINLEAF_DEPTHFIRST_ID]) #set last_mainleaf
+                            arr = np.array(current_tree, dtype = dt)
+                            depth_sort =  arr['haloid_depth_first'].argsort() #sort by depthid
+                            f[tree_id] = arr[depth_sort] 
                             current_tree = []
                             tree_index += 1
                         else:
@@ -73,10 +133,10 @@ class RockstarReader(object):
                         first_line = False
                         tree_id = line[6:].strip('\n')
                     else: #read in next tree element
-                        current_tree.append(line.split())
-                arr = np.array(current_tree).astype('f8')
-                f[tree_id] = arr[arr[:, DEPTH_FIRST_ID].argsort()]
-                f[tree_id].attrs['last_mainleaf'] = int(f[tree_id][0][LAST_MAINLEAF_DEPTHFIRST_ID])
+                        current_tree.append(tuple(line.split()))
+                arr = np.array(current_tree, dtype = dt)
+                depth_sort =  arr['haloid_depth_first'].argsort()
+                f[tree_id] = arr[depth_sort]
 
         return 
             
