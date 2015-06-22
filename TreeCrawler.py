@@ -4,27 +4,27 @@ import h5py
 import matplotlib.pyplot as plt
 from scipy.interpolate import InterpolatedUnivariateSpline
 LAST_MAINLEAF_DEPTHFIRST_ID = 34
-DEPTH_ID_COL = 28
-Z_COL = 0
+DEPTH_FIRST_ID = 28
+SCALE = 0
+NEXT_COPROGENITOR_DEPTHFIRST_ID = 32
+MVIR = 10
+ID = 1 
 
+def plotArray(array1, array2):
+    # print array1
+    
+    spline = InterpolatedUnivariateSpline(array1, array2)
 
-def getTrunk(haloID, hdf5_file):
-    """return list of id's of tree's trunk"""
-    mask = []
-    with h5py.File(hdf5_file, "r") as f:
-        tree = f[str(haloID)]
-        last_mainleaf = tree[0][LAST_MAINLEAF_DEPTHFIRST_ID]
-        depth_id = tree[0][DEPTH_ID_COL] #first
-        for i in range(0, last_mainleaf):
-            # if(tree[i][DEPTH_ID_COL] == (depth_id + 1)):# next in depth search
-            mask.append(i)
-                # depth_id+=1
-    return mask
+    xs = np.linspace(0, 1.001, 1000)
+    plt.plot(xs, spline(xs))
+    plt.show()
+    return
+
 
 def getTrunkTable(haloID, hdf5_file):
     with h5py.File(hdf5_file, "r") as f:
         last_mainleaf = int(f[str(haloID)].attrs.get('last_mainleaf'))
-        root = int(f[str(haloID)][0][DEPTH_ID_COL])
+        root = int(f[str(haloID)][0][DEPTH_FIRST_ID])
         length = last_mainleaf - root
         trunk = f[str(haloID)][0: (length + 1)]
     return trunk
@@ -35,37 +35,35 @@ def print_trunk_column(column, haloID, hdf5_file):
     """print values of a given column of a tree's trunk"""
 
     masked_table = getTrunkTable(haloID, hdf5_file)
+    # with h5py.File(hdf5_file, "r") as f:
+        # masked_table =  f[str(haloID)][...]
 
     #print column
     for i in range(0, len(masked_table)): #O(1) for length function in any python object
         print masked_table[i][column]
+    return masked_table[:, column]
 
 #mass - (10)
 def generalized_formation_time(column, input_value, fraction, haloID, hdf5_file):
     """inputs: colum, input value, fraction, haloId, hdf5_file"""
-    # trunk_mask = getTrunk(haloID, hdf5_file) #get trunk
-    
-    # formation_time = input_value * fraction #formation time
-
-    # table = getTable(haloID, hdf5_file) #get table
 
     #filter table with mask
+    accuracy = 1000
     masked_table = getTrunkTable(haloID, hdf5_file)
+    formation_time = 2.7e13
 
-    spline = InterpolatedUnivariateSpline(list(reversed(masked_table[:, Z_COL])), list(reversed(masked_table[:,column])))
+    spline = InterpolatedUnivariateSpline(list(reversed(masked_table[:, SCALE])), list(reversed(masked_table[:,column])))
 
-    spline()
+    xs = np.linspace(0, 1.001, accuracy)
+    plt.plot(xs, spline(xs))
+    fm_time = [formation_time] * accuracy
+    plt.plot(xs, fm_time)
+    x = np.intersect1d(spline(xs), fm_time)
 
-    # find when reaches formation time
-    i = 0
-    while(masked_table[i][column] > formation_time):
-        i+=1
+    plt.plot(x)
+    plt.show()
 
-    print i
-    print 'scale factor', masked_table[i][0]
-    print 'id', masked_table[i][1]
-    print 'formation time', masked_table[i][column]
-    return
+    return x
 
 def generalized_property_derivative(column, z, dz, haloID, hdf5_file):
     """Solve for generalized property derivative at a given z
@@ -82,7 +80,7 @@ def generalized_property_derivative(column, z, dz, haloID, hdf5_file):
 
     masked_table = getTrunkTable(haloID, hdf5_file)
 
-    spline = InterpolatedUnivariateSpline(list(reversed(masked_table[:, Z_COL])), list(reversed(masked_table[:,column])))
+    spline = InterpolatedUnivariateSpline(list(reversed(masked_table[:, SCALE])), list(reversed(masked_table[:,column])))
     col_z = spline(z)
     col_dz = spline((z+dz))
 
@@ -93,5 +91,53 @@ def generalized_property_derivative(column, z, dz, haloID, hdf5_file):
 
 
 
-# def smooth_accretion(haloID, hdf5_file):
-#     
+def clumpy_accretion(haloID, hdf5_file):
+    with h5py.File(hdf5_file, "r") as f:
+        table = f[str(haloID)][...]
+    trunk_table = getTrunkTable(haloID, hdf5_file)
+    clumpy_array = []
+    id_array = list(table[:, DEPTH_FIRST_ID])
+
+    for i in range(0, len(trunk_table) - 1):
+        clumpy = trunk_table[i + 1][MVIR]
+        coprogenitor = table[i + 1][NEXT_COPROGENITOR_DEPTHFIRST_ID]
+        while(coprogenitor != -1.0):
+            index_coprogenitor = id_array.index(coprogenitor)
+            clumpy += table[index_coprogenitor][MVIR]
+            coprogenitor = table[index_coprogenitor][NEXT_COPROGENITOR_DEPTHFIRST_ID]
+        clumpy_array.append(clumpy)
+
+    array1 = list(reversed(trunk_table[:, SCALE]))
+    array1 = array1[:(len(array1) - 1)]
+    plotArray(array1, list(reversed(clumpy_array)))
+    return clumpy_array
+
+
+def smooth_accretion(haloID, hdf5_file):
+    trunk_table = getTrunkTable(haloID, hdf5_file)
+    M_0 = trunk_table[0][MVIR]
+    smooth_array = []
+    clumpy_array = clumpy_accretion(haloID, hdf5_file)
+
+    for i in range(0, len(trunk_table) - 2):
+        smooth = trunk_table[i][MVIR] - clumpy_array[i + 1]
+        smooth_array.append(smooth) 
+
+    array1 = list(reversed(trunk_table[:, SCALE]))
+    array1 = array1[:(len(array1) - 2)]
+    plotArray(array1, list(reversed(smooth_array)))
+    return smooth_array
+
+
+
+
+
+
+
+
+
+
+
+
+
+    

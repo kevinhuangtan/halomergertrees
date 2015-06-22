@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import h5py
-DEPTH_ID_COL = 28
+DEPTH_FIRST_ID = 28
 LAST_MAINLEAF_DEPTHFIRST_ID = 34
 
 class RockstarReader(object):
@@ -64,7 +64,7 @@ class RockstarReader(object):
                     if(line[0]=='#'): #new tree
                         if(not first_line): #not first tree
                             arr = np.array(current_tree).astype('f8')
-                            f[tree_id] = arr[arr[:, DEPTH_ID_COL].argsort()] #sort by depthid
+                            f[tree_id] = arr[arr[:, DEPTH_FIRST_ID].argsort()] #sort by depthid
                             f[tree_id].attrs['last_mainleaf'] = int(f[tree_id][0][LAST_MAINLEAF_DEPTHFIRST_ID]) #set last_mainleaf
                             current_tree = []
                             tree_index += 1
@@ -75,7 +75,7 @@ class RockstarReader(object):
                     else: #read in next tree element
                         current_tree.append(line.split())
                 arr = np.array(current_tree).astype('f8')
-                f[tree_id] = arr[arr[:, DEPTH_ID_COL].argsort()]
+                f[tree_id] = arr[arr[:, DEPTH_FIRST_ID].argsort()]
                 f[tree_id].attrs['last_mainleaf'] = int(f[tree_id][0][LAST_MAINLEAF_DEPTHFIRST_ID])
 
         return 
