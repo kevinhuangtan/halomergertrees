@@ -96,8 +96,7 @@ class RockstarReader(object):
                 header['comments'] = []
                 for i, line in enumerate(ascii_file):
                     header['comments'].append(line)
-                    #create categories from first line
-                    if(i==0):
+                    if(i==0): #create categories from first line
                         header['columns'] = line.split()
                     if(line[0]!='#'):
                         h5_header.attrs['length'] = i
@@ -116,7 +115,7 @@ class RockstarReader(object):
                 for _ in xrange(f['ascii_header'].attrs['length']):
                     next(ascii_file)    
 
-                f['ascii_header/numtrees'] = next(ascii_file)
+                next(ascii_file)
                 tree_index = 0
                 first_line = True
                 current_tree = []

@@ -38,8 +38,9 @@ def print_trunk_column(column, haloID, hdf5_file):
     masked_table = getTrunkTable(haloID, hdf5_file)
 
     #print column
-    for i in range(0, len(masked_table)): #O(1) for length function in any python object
-        print masked_table[i][column]
+    # for i in range(0, len(masked_table)): #O(1) for length function in any python object
+    #     print masked_table[i][column]
+    # print masked_table[column]
     return masked_table[column]
 
 #mass - (10)
@@ -94,7 +95,6 @@ def clumpy_accretion(haloID, hdf5_file):
             clumpy += table[index_coprogenitor][MVIR]
             coprogenitor = table[index_coprogenitor][NEXT_COPROGENITOR_DEPTHFIRST_ID]
         clumpy_array.append(clumpy)
-
 
     #plot
     array_z = list(reversed(trunk_table['scale']))
