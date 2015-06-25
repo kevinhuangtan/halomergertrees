@@ -108,14 +108,15 @@ class RockstarReader(object):
     def read_in_trees(self):
         """Store each tree in its own hdf5 dataset. Tree is sorted by Depth First ID for fast access to trunk
         """
-        with h5py.File(self.hdf5_name,"r+") as f:
-            tree_id = ""
-            with open(self.fname) as ascii_file:
+       
+        with open(self.fname) as ascii_file:
+            with h5py.File(self.hdf5_name,"r+") as f:
+                tree_id = ""
                  #skip header lines
                 for _ in xrange(f['ascii_header'].attrs['length']):
                     next(ascii_file)    
-
                 next(ascii_file)
+                line_num = 0
                 tree_index = 0
                 first_line = True
                 current_tree = []
@@ -126,9 +127,7 @@ class RockstarReader(object):
                             depth_sort =  arr['haloid_depth_first'].argsort() #sort by depthid
                             f[tree_id] = arr[depth_sort] 
                             current_tree = []
-                            tree_index += 1
-                        else:
-                            tree_index += 1
+                        tree_index += 1
                         first_line = False
                         tree_id = line[6:].strip('\n')
                     else: #read in next tree element
@@ -136,7 +135,6 @@ class RockstarReader(object):
                 arr = np.array(current_tree, dtype = dt)
                 depth_sort =  arr['haloid_depth_first'].argsort()
                 f[tree_id] = arr[depth_sort]
-
         return 
             
     def _uncompress_ascii(self):
